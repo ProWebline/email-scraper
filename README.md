@@ -26,7 +26,7 @@ This script finds companies in different cities, extracts their websites, and sc
 1. Open a terminal (Command Prompt or PowerShell)
 2. Navigate to the folder where you saved this script:
    ```
-   cd c:\Users\YourUsername\Desktop\Roblox
+   cd c:\Users\YourUsername\Desktop\
    ```
 3. Install the required packages:
    ```
