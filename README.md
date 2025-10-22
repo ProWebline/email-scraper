@@ -1,257 +1,164 @@
-# email-scraper Tutorial
+# Email Scraper Prowebline
 
-# Email Scraper Prowebline# Gebäudereinigung E-Mail Scraper
+A tool that automatically scrapes business emails from websites using Google Maps search.
 
+## What Does It Do?
 
+This script finds companies in different cities, extracts their websites, and scrapes business email addresses from those websites. Results are saved in a CSV file.
 
-A powerful Google Maps email scraper that extracts business contact information from companies worldwide.Ein ethisches Python-Programm zum Sammeln öffentlich zugänglicher E-Mail-Adressen von Gebäudereinigungsfirmen.
+## Requirements
 
+- **Python 3.7+**
+- **Chrome Browser** (installed on your computer)
+- **ChromeDriver** (automatic driver management)
 
+## Installation - Step by Step
 
-## 🚀 Quick Start Guide## ⚠️ Wichtige Hinweise
+### Step 1: Install Python
 
+1. Download Python from [python.org](https://www.python.org/downloads/)
+2. Run the installer
+3. **IMPORTANT**: Check the box "Add Python to PATH"
+4. Click "Install Now"
 
+### Step 2: Install Required Packages
 
-### Step 1: Install Requirements- **Nur öffentlich zugängliche Daten**: Sammelt nur E-Mails von öffentlichen Webseiten
+1. Open a terminal (Command Prompt or PowerShell)
+2. Navigate to the folder where you saved this script:
+   ```
+   cd c:\Users\YourUsername\Desktop\Roblox
+   ```
+3. Install the required packages:
+   ```
+   pip install -r requirements.txt
+   ```
+   This will install:
+   - Selenium (browser automation)
+   - BeautifulSoup4 (web scraping)
+   - Requests (HTTP requests)
 
-- **Respektiert robots.txt**: Prüft automatisch robots.txt vor dem Scraping
+## How to Use - Step by Step
 
-First, install Python (if you don't have it):- **Rate Limiting**: Wartet zwischen Anfragen (1.5-3 Sekunden)
+### Step 1: Open Terminal
 
-- Download from: https://www.python.org/downloads/- **DSGVO-konform**: Für geschäftliche, öffentlich verfügbare Kontaktdaten
+1. Go to the folder with the script
+2. Right-click and select "Open in Terminal" (or use PowerShell/Command Prompt)
 
-- During installation, check "Add Python to PATH"
+### Step 2: Run the Script
 
-## 🚀 Installation
-
-### Step 2: Install Dependencies
-
-1. Python 3.8+ installieren (falls nicht vorhanden)
-
-Open a terminal/command prompt in the project folder and run:2. Abhängigkeiten installieren:
-
-
-
-```bash```bash
-
-pip install selenium beautifulsoup4 requestspip install -r requirements.txt
-
-``````
-
-
-
-### Step 3: Install Chrome Browser## 📖 Verwendung
-
-
-
-Make sure you have Google Chrome installed on your computer.### Programm starten:
-
-
-
-### Step 4: Run the Script```bash
-
-python gebaeude_email_scraper.py
-
-Open a terminal in the project folder and run:```
-
-
-
-```bash### Optionen:
-
+Type this command and press Enter:
+```
 python email_scraper_prowebline.py
-
-```1. **URLs manuell eingeben**: Gib URLs von Gebäudereinigungsfirmen direkt ein
-
-2. **URLs aus Datei laden**: Lade URLs aus einer Textdatei (eine URL pro Zeile)
-
-## 📋 How to Use3. **Beispiel-Demo**: Demonstriert die Funktionalität
-
-
-
-### 1. **Enter Search Term**## 📝 URLs-Datei erstellen
-
-   - Example: "Restaurant", "Hotel", "Cleaning Service", "Law Firm"
-
-   - Can be any business type you want to findErstelle eine Textdatei (z.B. `urls.txt`) mit URLs:
-
-
-
-### 2. **Select Region**```
-
-   Choose from:https://www.gebäudereinigung-beispiel.de
-
-   - USAhttps://www.cleaning-service.de
-
-   - UKhttps://www.facility-management.de
-
-   - Germany```
-
-   - France
-
-   - Spain## 📊 Ausgabe
-
-   - Italy
-
-   - CanadaDas Programm erstellt eine CSV-Datei mit:
-
-   - Australia- Gefundenen E-Mail-Adressen
-
-   - Or enter custom cities- Zeitstempel
-
-
-
-### 3. **Set Number of Companies**Dateiname: `gebaeude_emails_YYYYMMDD_HHMMSS.csv`
-
-   - Choose how many companies to scrape per city (5-30)
-
-   - Recommended: 10-15 for faster results## 🔍 Funktionen
-
-
-
-### 4. **Choose Browser Visibility**- ✅ Respektiert robots.txt
-
-   - `n` = Browser runs hidden (faster)- ✅ Rate Limiting (1.5-3 Sek. zwischen Anfragen)
-
-   - `y` = See the browser working (good for testing)- ✅ Folgt Kontakt/Impressum-Links automatisch
-
-- ✅ Filtert ungültige E-Mails
-
-### 5. **Enable Multi-Threading (Optional)**- ✅ Entfernt Duplikate
-
-   - `n` = Single-threaded (slower, more stable)- ✅ CSV Export
-
-   - `y` = Multi-threaded (3x faster, uses more resources)
-
-## 🛡️ Ethische Verwendung
-
-### 6. **Wait for Results**
-
-   - The script will automatically:Dieses Tool ist für **legale geschäftliche Zwecke** gedacht:
-
-     - Search Google Maps- B2B-Kontaktaufnahme
-
-     - Visit company websites- Marktforschung
-
-     - Extract emails and phone numbers- Öffentlich zugängliche Firmendaten
-
-     - Save everything to `recipients.csv`
-
-**Nicht verwenden für:**
-
-## 📊 Output File- Spam
-
-- Belästigung
-
-Results are saved in: **`recipients.csv`**- Verletzung der Privatsphäre
-
-
-
-Contains:## 💡 Tipps
-
-- **Name**: Contact name (usually "Contact")
-
-- **Email**: Business email address- Starte mit wenigen URLs zum Testen
-
-- **Company**: Company name- Prüfe robots.txt manuell bei wichtigen Seiten
-
-- **Phone**: Phone number (if found)- Verwende für große Projekte die Google Custom Search API
-
-- **Website**: Company website URL- Respektiere Opt-Out-Wünsche
-
-
-
-## 🎯 Features## 🔧 Anpassungen
-
-
-
-✅ International search (8+ countries pre-configured)  Du kannst das Programm anpassen:
-
-✅ Multi-language support (English, German, French, Spanish, Italian)  - Rate Limiting: Zeile 69 (time.sleep)
-
-✅ Phone number extraction  - Max Depth: Parameter in scrape_page()
-
-✅ Duplicate email prevention  - Filter: extract_emails() Methode
-
-✅ Multi-threading for faster scraping  
-✅ Automatic retry on errors  
-✅ Cookie handling  
-✅ Progress tracking  
-
-## ⚙️ Configuration Tips
-
-### For Best Results:
-- Use **10-15 companies per city**
-- Start with **single-threading** first
-- Use **headless mode** (browser hidden) for speed
-- Search specific business types (e.g., "Italian Restaurant" instead of just "Restaurant")
-
-### For Faster Scraping:
-- Enable **multi-threading** (y)
-- Increase companies per city to **20-30**
-- Use **headless mode** (n for browser visibility)
-
-## 🔧 Troubleshooting
-
-### "ChromeDriver not found"
-**Solution:** The script will download it automatically. If not:
-```bash
-pip install webdriver-manager
 ```
 
-### "No emails found"
-**Solution:** 
-- Try different search terms
-- Increase number of companies per city
-- Some businesses don't list emails publicly
+### Step 3: Answer the Questions
 
-### Script runs too slow
-**Solution:**
-- Enable multi-threading
-- Reduce companies per city
-- Use headless mode
+The script will ask you:
 
-### Browser keeps crashing
-**Solution:**
-- Disable multi-threading
-- Close other programs
-- Update Chrome browser
+1. **What would you like to search for?**
+   - Example: `Cleaning Service`, `Restaurant`, `Hotel`, `Lawyer`, `Plumber`
+   - Type what you want and press Enter
 
-## 📝 Example Usage
+2. **Which region/country?**
+   - Choose a number 1-9 for predefined cities
+   - Or choose 9 to enter your own cities
+   - Press Enter
 
-```
-Search term: Hotel
-Region: 1 (USA)
-Companies per query: 10
-Browser visible: n
-Multi-threading: n
+3. **How many companies per search?**
+   - Enter a number between 5-30 (default: 10)
+   - More = longer runtime
 
-Result: 60+ hotel emails from 6 US cities in ~10 minutes
-```
+4. **Should the browser be visible?**
+   - Type `y` for yes (you can see what it's doing)
+   - Type `n` for no (runs in background)
+   - Default: `n`
 
-## ⚠️ Legal Notice
+5. **Use multi-threading?**
+   - Type `y` for faster speed (uses more computer resources)
+   - Type `n` for slower but more stable
+   - Default: `n`
 
-This tool is for educational and business research purposes only. Always:
-- Respect website terms of service
-- Follow GDPR and data protection laws
-- Don't spam or misuse collected emails
-- Use responsibly and ethically
+### Step 4: Wait for Results
 
-## 💡 Tips
+The script will:
+- Search Google Maps for companies
+- Visit their websites
+- Extract email addresses
+- Save everything to `recipients.csv`
 
-1. **Specific searches work better**: "Pizza Restaurant NYC" > "Restaurant"
-2. **Check CSV file**: Open with Excel or Google Sheets
-3. **Save results**: The CSV file is overwritten each run
-4. **Be patient**: Quality data takes time (10-15 minutes is normal)
-5. **Start small**: Test with 5 companies first, then scale up
+**This takes 5-15 minutes** depending on your settings.
 
-## 🆘 Support
+### Step 5: Check Results
+
+When done, a file called `recipients.csv` will be created in the same folder.
+Open it with Excel, Google Sheets, or any text editor to see the emails.
+
+## What's in the CSV File?
+
+| Column | Meaning |
+|--------|---------|
+| Name | Contact person name |
+| Email | Email address (main result) |
+| Company | Company name |
+| Phone | Phone number (if found) |
+| Website | Company website |
+
+## Troubleshooting
+
+### Problem: "Chrome not found"
+- **Solution**: Make sure Google Chrome is installed on your computer
+
+### Problem: "Module not found" error
+- **Solution**: Run `pip install -r requirements.txt` again
+
+### Problem: Script is very slow
+- **Solution**: 
+  - Use `n` for browser visibility (faster)
+  - Use `y` for multi-threading (faster)
+  - Search fewer companies (5-10 instead of 30)
+
+### Problem: No emails found
+- **Solution**: 
+  - Try different search terms
+  - Try different regions
+  - Some websites don't have visible email addresses
+
+### Problem: Browser keeps crashing
+- **Solution**:
+  - Use single-threaded mode (`n` for multi-threading)
+  - Reduce the number of companies per search
+  - Close other applications to free up memory
+
+## Performance Tips
+
+- **For speed**: Use multi-threading + headless browser + more companies
+- **For stability**: Use single-threaded + visible browser + fewer companies
+- **Start small**: Test with 5-10 companies first before scaling up
+
+## Privacy & Legal
+
+⚠️ **Important**: Make sure you follow local laws and website terms of service before scraping.
+- Check if websites allow scraping
+- Don't overload servers with too many requests
+- Some regions have data protection laws (GDPR, etc.)
+
+## Common Search Terms to Try
+
+- Cleaning Service
+- Restaurant
+- Hotel
+- Law Firm
+- Plumber
+- Electrician
+- Marketing Agency
+- IT Services
+- Construction Company
+- Car Rental
+
+## Need Help?
 
 If you encounter issues:
-1. Check your internet connection
-2. Update Google Chrome
-3. Reinstall dependencies: `pip install --upgrade selenium beautifulsoup4`
-4. Try without multi-threading first
-
----
-
-**Happy Scraping! 🎉**
+1. Check that all packages are installed: `pip install -r requirements.txt`
+2. Make sure Chrome is up to date
+3. Try with fewer companies and single-threaded mode first
+4. Close other applications to free memory
