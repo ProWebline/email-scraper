@@ -86,6 +86,52 @@ class EmailScraperProwebline:
             if matches:
                 return matches[0]
         return None
+
+    def search_duckduckgo(self, query, max_results=5):
+        try:
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+            }
+            params = {'q': query}
+            resp = requests.get('https://duckduckgo.com/html/', params=params, headers=headers, timeout=12)
+            urls = []
+            if resp.status_code == 200:
+                soup = BeautifulSoup(resp.text, 'html.parser')
+                for a in soup.select('a.result__a'):
+                    href = a.get('href')
+                    if not href:
+                        continue
+                    # DuckDuckGo sometimes wraps URLs with '/l/?' redirector
+                    if href.startswith('/l/?'):
+                        # Attempt to extract target URL from 'uddg' param
+                        parsed = urlparse(href)
+                        qs = dict([p.split('=') for p in parsed.query.split('&') if '=' in p])
+                        target = qs.get('uddg')
+                        if target:
+                            href = requests.utils.unquote(target)
+                    # Basic cleanup
+                    href = href.split('#')[0]
+                    skip_hosts = ['google.com', 'gstatic.com']
+                    if not any(sh in href.lower() for sh in skip_hosts):
+                        urls.append(href)
+                    if len(urls) >= max_results:
+                        break
+            return urls
+        except Exception:
+            return []
+
+    def scrape_page_for_emails(self, url, timeout=12):
+        try:
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+            }
+            resp = requests.get(url, headers=headers, timeout=timeout)
+            if resp.status_code >= 200 and resp.status_code < 300:
+                emails = self.extract_emails(resp.text)
+                return emails
+        except Exception:
+            pass
+        return []
     
     def scrape_google_maps(self, query, max_results=20):
         print(f"\n[*] Google Maps search: '{query}'")
@@ -174,7 +220,41 @@ class EmailScraperProwebline:
                                 websites.append(clean_url)
                                 print(f"      [+] {clean_url}")
                     else:
-                        print(f"      [!] No website found")
+                        # Fallback: try to find emails even if no website present
+                        company_name = None
+                        try:
+                            company_name = link.get_attribute('aria-label') or link.text
+                        except Exception:
+                            pass
+                        if not company_name:
+                            try:
+                                # Attempt to read company name from the opened place panel
+                                name_candidates = self.driver.find_elements(By.CSS_SELECTOR, "h1.DUwDvf, h1[itemprop='name']")
+                                if name_candidates:
+                                    company_name = name_candidates[0].text
+                            except Exception:
+                                pass
+                        if company_name:
+                            fallback_query = f"{company_name} email"
+                            fallback_urls = self.search_duckduckgo(fallback_query, max_results=5)
+                            for furl in fallback_urls:
+                                emails_from_page = self.scrape_page_for_emails(furl)
+                                for em in emails_from_page:
+                                    with self.lock:
+                                        if em not in self.emails:
+                                            self.emails[em] = furl
+                                            if furl not in self.company_data:
+                                                self.company_data[furl] = {
+                                                    'emails': [],
+                                                    'phone': None,
+                                                    'address': None,
+                                                    'website': furl
+                                                }
+                                            if em not in self.company_data[furl]['emails']:
+                                                self.company_data[furl]['emails'].append(em)
+                                            print(f"      [+] Fallback email: {em} ({company_name})")
+                        else:
+                            print(f"      [!] No website found")
                     
                 except Exception as e:
                     print(f"      [X] Error: {e}")
@@ -369,8 +449,9 @@ class EmailScraperProwebline:
                 if i % 5 == 0:
                     print(f"\n[>] Progress: {len(self.emails)} emails found so far")
     
-    def save_results(self):
-        filename = "recipients.csv"
+    def save_results(self, filename_prefix="recipients"):
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"{filename_prefix}_{timestamp}.csv"
         
         valid_emails = {}
         
@@ -426,10 +507,54 @@ def main():
     print("\n[*] What would you like to search for?")
     print("Examples: 'Cleaning Service', 'Restaurant', 'Hotel', 'Law Firm', etc.")
     
-    search_term = input("\n> Search term: ").strip()
+    search_term = input("\n> Search term (optional): ").strip()
     
-    if not search_term:
-        print("[X] No search term entered")
+    preset_categories = [
+        "Retail and eCommerce",
+        "Healthcare and Medical Practices",
+        "Education and Tutoring Services",
+        "Professional Services (Lawyers, Accountants)",
+        "Restaurants and Food Services",
+        "Auto Repair Shops",
+        "Cleaning Services",
+        "Travel Agencies",
+        "Freelancers (Design, Writing)",
+        "Essential Businesses (Grocery, Pharmacies)",
+        "Agriculture and Manufacturing",
+        "Hotels and Hospitality",
+        "Lawn Care and Landscaping",
+        "Dance Instructors",
+        "Software and SaaS",
+        "Digital Marketing Agencies",
+        "Web Design and Development",
+        "Real Estate Agencies",
+        "Gyms and Fitness",
+        "Wedding Planners",
+        "Photography Studios",
+        "IT Services"
+    ]
+    
+    print("\n[*] Include preset categories alongside your search term?")
+    print("Press Enter to use ALL, or enter numbers comma-separated to choose.")
+    for idx, cat in enumerate(preset_categories, 1):
+        print(f"   {idx}. {cat}")
+    cat_choice = input("> Categories (y/Enter=all, n=none, or e.g. '1,2,5'): ").strip().lower()
+    include_categories = True
+    selected_categories = preset_categories
+    if cat_choice == 'n':
+        include_categories = False
+        selected_categories = []
+    elif cat_choice and cat_choice != 'y':
+        try:
+            indices = [int(x.strip()) for x in cat_choice.split(',') if x.strip().isdigit()]
+            selected_categories = [preset_categories[i-1] for i in indices if 1 <= i <= len(preset_categories)]
+            include_categories = len(selected_categories) > 0
+        except Exception:
+            include_categories = True
+            selected_categories = preset_categories
+    
+    if not search_term and not include_categories:
+        print("[X] No search term or categories selected")
         return
     
     print("\n[*] Which region/country should be searched?")
@@ -442,48 +567,57 @@ def main():
     print("7. Canada (Toronto, Montreal, Vancouver, Calgary)")
     print("8. Australia (Sydney, Melbourne, Brisbane, Perth)")
     print("9. Enter custom cities manually")
+    print("10. Nigeria (Cities/States)")
     
-    region = input("\n> Selection (1-9): ").strip()
+    region = input("\n> Selection (1-10): ").strip()
     
     queries = []
+    locations = []
     
     if region == '1':
-        cities = ["New York", "Los Angeles", "Chicago", "Houston", "Miami", "Phoenix"]
-        queries = [f"{search_term} {city}" for city in cities]
+        locations = ["New York", "Los Angeles", "Chicago", "Houston", "Miami", "Phoenix"]
     elif region == '2':
-        cities = ["London", "Manchester", "Birmingham", "Leeds", "Glasgow"]
-        queries = [f"{search_term} {city}" for city in cities]
+        locations = ["London", "Manchester", "Birmingham", "Leeds", "Glasgow"]
     elif region == '3':
-        cities = ["Berlin", "Munich", "Hamburg", "Frankfurt", "Cologne", "Stuttgart"]
-        queries = [f"{search_term} {city}" for city in cities]
+        locations = ["Berlin", "Munich", "Hamburg", "Frankfurt", "Cologne", "Stuttgart"]
     elif region == '4':
-        cities = ["Paris", "Lyon", "Marseille", "Toulouse", "Nice"]
-        queries = [f"{search_term} {city}" for city in cities]
+        locations = ["Paris", "Lyon", "Marseille", "Toulouse", "Nice"]
     elif region == '5':
-        cities = ["Madrid", "Barcelona", "Valencia", "Seville", "Bilbao"]
-        queries = [f"{search_term} {city}" for city in cities]
+        locations = ["Madrid", "Barcelona", "Valencia", "Seville", "Bilbao"]
     elif region == '6':
-        cities = ["Rome", "Milan", "Naples", "Turin", "Florence"]
-        queries = [f"{search_term} {city}" for city in cities]
+        locations = ["Rome", "Milan", "Naples", "Turin", "Florence"]
     elif region == '7':
-        cities = ["Toronto", "Montreal", "Vancouver", "Calgary", "Ottawa"]
-        queries = [f"{search_term} {city}" for city in cities]
+        locations = ["Toronto", "Montreal", "Vancouver", "Calgary", "Ottawa"]
     elif region == '8':
-        cities = ["Sydney", "Melbourne", "Brisbane", "Perth", "Adelaide"]
-        queries = [f"{search_term} {city}" for city in cities]
+        locations = ["Sydney", "Melbourne", "Brisbane", "Perth", "Adelaide"]
     elif region == '9':
         print("\n[*] Enter cities/regions (one per line, empty line to finish):")
         print("Tip: Include country if needed (e.g., 'Paris, France')")
-        cities = []
         while True:
             city = input("> ").strip()
             if not city:
                 break
-            cities.append(city)
-        queries = [f"{search_term} {city}" for city in cities]
+            locations.append(city)
+    elif region == '10':
+        nigeria_cities = ["Lagos", "Abuja", "Port Harcourt", "Ibadan", "Kano", "Benin City", "Enugu", "Kaduna", "Abeokuta", "Owerri"]
+        nigeria_states = ["Lagos State", "FCT Abuja", "Rivers State", "Oyo State", "Kano State", "Edo State", "Enugu State", "Kaduna State", "Ogun State", "Imo State", "Delta State", "Anambra State"]
+        print("\n[*] Nigeria scope: 1=cities, 2=states, 3=both (default=1)")
+        ng_scope = input("> Selection (1/2/3, default=1): ").strip()
+        if ng_scope == '2':
+            locations = nigeria_states
+        elif ng_scope == '3':
+            locations = nigeria_cities + nigeria_states
+        else:
+            locations = nigeria_cities
     else:
         print("[X] Invalid selection")
         return
+    
+    if search_term:
+        queries.extend([f"{search_term} {loc}" for loc in locations])
+    if include_categories and selected_categories:
+        for cat in selected_categories:
+            queries.extend([f"{cat} {loc}" for loc in locations])
     
     if not queries:
         print("[X] No search queries")
@@ -511,25 +645,28 @@ def main():
         print(f"\n[*] Starting search...")
         print(f"[!] This may take 5-15 minutes...\n")
         
-        scraper.run(queries, max_per_query)
+        print(f"\n[*] Scraping up to {max_per_query} companies per query across {len(queries)} queries...")
         
-        if scraper.emails:
-            filename = scraper.save_results()
-            print(f"\n{'='*70}")
-            print("[+] DONE!")
-            print(f"{'='*70}")
-            print(f"\n[>] Summary:")
-            print(f"   [>] Visited websites: {len(scraper.visited_urls)}")
-            print(f"   [>] Found emails: {len(scraper.emails)}")
-            print(f"   [>] Saved in: {filename}")
-            print(f"\n[>] Found emails:")
-            for email, source in sorted(scraper.emails.items()):
-                print(f"   - {email} - {source}")
-        else:
-            print("\n[!] No emails found")
-            
+        scraper.run(queries, max_sites_per_query=max_per_query)
+        output_file = scraper.save_results(filename_prefix="recipients")
+        # Show absolute path and optionally open
+        import os
+        abs_path = os.path.abspath(output_file)
+        print(f"\n[✓] Results saved to: {abs_path}")
+        open_choice = input("Open the results file now? (y/N): ").strip().lower()
+        if open_choice == 'y':
+            try:
+                if os.name == 'posix':
+                    import subprocess
+                    subprocess.run(['open', abs_path], check=False)
+                else:
+                    os.startfile(abs_path)
+            except Exception as e:
+                print(f"[!] Could not open file automatically: {e}")
+    except KeyboardInterrupt:
+        print("\n[!] Interrupted by user")
     except Exception as e:
-        print(f"\n[X] Error: {str(e)}")
+        print(f"[X] Error during scraping: {e}")
     finally:
         if scraper:
             scraper.close()
